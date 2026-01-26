@@ -7,7 +7,7 @@ from passlib.context import CryptContext
 from src.auth.model import TokenType
 from src.config import jwt_settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 def get_password_hash(password):
     return pwd_context.hash(password)

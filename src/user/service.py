@@ -15,7 +15,7 @@ async def create_user(user_dto: UserCreateSchema, db: AsyncSession) -> User:
                             detail="User with this email already exists.")
 
     user_dict = user_dto.model_dump()
-    user_dict['password'] = get_password_hash(user_dict['password'])
+    user_dict['password'] = get_password_hash(user_dto.password)
     user = User(**user_dict)
 
     db.add(user)

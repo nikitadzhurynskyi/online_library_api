@@ -3,7 +3,7 @@ name = "libraryapi"
 version = "1.0.0"
 description = "Online Library API"
 authors = [
-    {name = "Nikita Dzhurynskyi",email = "nikitadzhurynskyi@gmail.com"}
+    { name = "Nikita Dzhurynskyi", email = "nikitadzhurynskyi@gmail.com" }
 ]
 requires-python = ">=3.13,<4.0"
 dependencies = [

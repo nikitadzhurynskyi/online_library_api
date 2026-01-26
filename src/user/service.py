@@ -3,8 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.security import get_password_hash
-from src.user.schema import UserCreateSchema, UserResponseSchema
 from src.user.model import User
+from src.user.schema import UserCreateSchema
 
 
 async def create_user(user_dto: UserCreateSchema, db: AsyncSession) -> User:
@@ -23,6 +23,7 @@ async def create_user(user_dto: UserCreateSchema, db: AsyncSession) -> User:
     await db.refresh(user)
     return user
 
+
 async def get_user_by_email(email: str, db: AsyncSession) -> User:
     query = select(User).where(User.email == email)
     result = await db.execute(query)
@@ -30,6 +31,7 @@ async def get_user_by_email(email: str, db: AsyncSession) -> User:
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     return user
+
 
 async def get_user_by_id(user_id: int, db: AsyncSession) -> User:
     query = select(User).where(User.id == user_id)

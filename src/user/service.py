@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.security import get_password_hash
+from src.auth.security import get_password_hash, verify_password
 from src.user.model import User
 from src.user.schema import UserCreateSchema
 
@@ -40,3 +40,12 @@ async def get_user_by_id(user_id: int, db: AsyncSession) -> User:
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     return user
+
+async def authenticate_user(email: str, password: str, db: AsyncSession) -> User | None:
+    user = await get_user_by_email(email, db)
+    if not user:
+        return None
+    if not verify_password(password, user.password):
+        return None
+    return user
+

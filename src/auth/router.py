@@ -83,6 +83,7 @@ async def logout(response: Response) -> dict[str, str]:
     response.delete_cookie(key="refresh_token")
     return {"message": "Logged out successfully"}
 
+
 @router.get("/me", response_model=UserResponseSchema)
 async def get_current_user(user: User = Depends(get_current_user)) -> UserResponseSchema:
     return UserResponseSchema.model_validate(user)

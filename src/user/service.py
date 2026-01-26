@@ -41,6 +41,7 @@ async def get_user_by_id(user_id: int, db: AsyncSession) -> User:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     return user
 
+
 async def authenticate_user(email: str, password: str, db: AsyncSession) -> User | None:
     user = await get_user_by_email(email, db)
     if not user:
@@ -48,4 +49,3 @@ async def authenticate_user(email: str, password: str, db: AsyncSession) -> User
     if not verify_password(password, user.password):
         return None
     return user
-

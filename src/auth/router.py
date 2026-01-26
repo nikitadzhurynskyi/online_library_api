@@ -4,10 +4,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.dependencies import get_current_user
 from src.auth.model import Token
 from src.auth.security import create_access_token, create_refresh_token
 from src.config import jwt_settings
 from src.db.database import get_db
+from src.user.model import User
 from src.user.schema import UserCreateSchema, UserResponseSchema
 from src.user.service import create_user, authenticate_user, get_user_by_id
 
@@ -80,3 +82,7 @@ async def refresh_user(response: Response,
 async def logout(response: Response) -> dict[str, str]:
     response.delete_cookie(key="refresh_token")
     return {"message": "Logged out successfully"}
+
+@router.get("/me", response_model=UserResponseSchema)
+async def get_current_user(user: User = Depends(get_current_user)) -> UserResponseSchema:
+    return UserResponseSchema.model_validate(user)

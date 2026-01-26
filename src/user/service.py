@@ -1,8 +1,8 @@
-
 from fastapi import HTTPException, status
-from sqlalchemy import select, String
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.security import get_password_hash
 from src.user.schema import UserCreateSchema, UserResponseSchema
 from src.user.model import User
 
@@ -14,8 +14,8 @@ async def create_user(user_dto: UserCreateSchema, db: AsyncSession) -> User:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="User with this email already exists.")
 
-    # hash password
     user_dict = user_dto.model_dump()
+    user_dict['password'] = get_password_hash(user_dict['password'])
     user = User(**user_dict)
 
     db.add(user)

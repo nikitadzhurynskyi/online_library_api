@@ -12,4 +12,13 @@ class DBSettings(BaseSettings):
     def database_url(self):
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
+class JWTSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    ACCESS_TOKEN_SECRET: str
+    REFRESH_TOKEN_EXPIRE_DAYS: int
+    REFRESH_TOKEN_SECRET: str
+    ALGORITHM = "HS256"
+
 db_settings = DBSettings()
+jwt_settings = JWTSettings()

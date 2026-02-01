@@ -47,4 +47,4 @@ class BookResponse(BookSchema):
 
 class FavoriteBooksSchema(BaseModel):
     user_id: int
-    books: list[BookSchema]
+    book_ids: list[int]

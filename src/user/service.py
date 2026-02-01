@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.auth.security import get_password_hash, verify_password
 from src.user.model import User
@@ -33,7 +34,7 @@ async def get_user_by_email(email: str, db: AsyncSession) -> User:
 
 
 async def get_user_by_id(user_id: int, db: AsyncSession) -> User:
-    query = select(User).where(User.id == user_id)
+    query = select(User).where(User.id == user_id).options(selectinload(User.favorite_books))
     result = await db.execute(query)
     user = result.scalar_one_or_none()
     if not user:

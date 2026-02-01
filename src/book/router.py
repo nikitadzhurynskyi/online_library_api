@@ -2,10 +2,12 @@ from fastapi import APIRouter, Response
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.dependencies import get_current_admin
-from src.book.schema import UpdateBookSchema, BookResponse, CreateBookSchema
-from src.book.service import create_book, get_books_by_title, get_all_books, get_book_by_id, update_book, delete_book
+from src.auth.dependencies import get_current_admin, get_current_user
+from src.book.schema import BookResponse, FavoriteBooksSchema, CreateBookSchema, UpdateBookSchema
+from src.book.service import get_favorite_books_by_user_id, add_book_to_favorite, create_book, update_book, delete_book, \
+    get_book_by_id, get_all_books, get_books_by_title, remove_book_from_favorite
 from src.db.database import get_db
+from src.user.model import User
 
 router = APIRouter(prefix="/api/books", tags=["Books"])
 
@@ -19,6 +21,28 @@ async def post_books(dto: CreateBookSchema,
 @router.get("/search", response_model=list[BookResponse])
 async def search_books(title: str, db: AsyncSession = Depends(get_db)) -> list[BookResponse]:
     return [BookResponse.model_validate(book) for book in await get_books_by_title(title, db)]
+
+
+@router.post("/favorite", response_model=BookResponse)
+async def post_favorite_book(book_id: int,
+                             user: User = Depends(get_current_user),
+                             db: AsyncSession = Depends(get_db)) -> BookResponse:
+    book = await add_book_to_favorite(user.id, book_id, db)
+    return BookResponse.model_validate(book)
+
+
+@router.get("/favorites", response_model=FavoriteBooksSchema)
+async def get_favorite_books(user: User = Depends(get_current_user),
+                             db: AsyncSession = Depends(get_db)) -> FavoriteBooksSchema:
+    books = await get_favorite_books_by_user_id(user.id, db)
+    return FavoriteBooksSchema(user_id=user.id, book_ids=[book.id for book in books])
+
+
+@router.delete("/favorite/{book_id}", response_model=BookResponse)
+async def delete_favorite_book(book_id: int, user: User = Depends(get_current_user),
+                               db: AsyncSession = Depends(get_db)) -> BookResponse:
+    book = await remove_book_from_favorite(user.id, book_id, db)
+    return BookResponse.model_validate(book)
 
 
 @router.get("", response_model=list[BookResponse])

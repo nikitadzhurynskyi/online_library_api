@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from src.book.model import Book, Author, Genre
 from src.book.schema import UpdateBookSchema, CreateBookSchema
+from src.user.service import get_user_by_id
 
 NOT_FOUND = "Book not found."
 
@@ -59,6 +60,42 @@ async def get_book_by_id(book_id: int, db: AsyncSession) -> Book:
     book = result.scalar_one_or_none()
     if book is None:
         raise HTTPException(status_code=404, detail=NOT_FOUND)
+    return book
+
+
+async def get_favorite_books_by_user_id(user_id: int, db: AsyncSession) -> Sequence[Book]:
+    user = await get_user_by_id(user_id, db)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    return user.favorite_books
+
+
+async def add_book_to_favorite(user_id: int, book_id: int, db: AsyncSession) -> Book:
+    user = await get_user_by_id(user_id, db)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    book = await get_book_by_id(book_id, db)
+    if book is None:
+        raise HTTPException(status_code=404, detail=NOT_FOUND)
+
+    user.favorite_books.append(book)
+    await db.commit()
+    return book
+
+
+async def remove_book_from_favorite(user_id: int, book_id: int, db: AsyncSession) -> Book:
+    try:
+        user = await get_user_by_id(user_id, db)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found.")
+        book = await get_book_by_id(book_id, db)
+        if book is None:
+            raise HTTPException(status_code=404, detail=NOT_FOUND)
+        user.favorite_books.remove(book)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Book is not in your favorite list.")
+    await db.commit()
     return book
 
 

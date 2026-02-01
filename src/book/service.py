@@ -1,45 +1,72 @@
 from fastapi import HTTPException
 from sqlalchemy import select, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from src.book.model import Book
-from src.book.schema import BookSchema, UpdateBookSchema
+from src.book.model import Book, Author, Genre
+from src.book.schema import UpdateBookSchema, CreateBookSchema
 
 NOT_FOUND = "Book not found."
 
-async def create_book(dto: BookSchema, db: AsyncSession) -> Book:
-    query = select(Book).where(Book.title == dto.title)
-    result = await db.execute(query)
-    if result.scalar_one_or_none() is None:
-        raise HTTPException(status_code=404, detail=NOT_FOUND)
 
-    book = Book(**dto.model_dump())
+async def create_book(dto: CreateBookSchema, db: AsyncSession) -> Book:
+    book = Book(title=dto.title, description=dto.description)
+    for author in dto.authors:
+        name, surname = author.split(maxsplit=1)
+        query = select(Author).where(Author.name == name, Author.surname == surname)
+        result = await db.execute(query)
+        author = result.scalar_one_or_none()
+        if author:
+            book.authors.append(author)
+        else:
+            book.authors.append(Author(name=name, surname=surname))
+
+    for genre_name in dto.genres:
+        query = select(Genre).where(Genre.name == genre_name)
+        result = await db.execute(query)
+        genre = result.scalar_one_or_none()
+        if genre:
+            book.genres.append(genre)
+        else:
+            book.genres.append(Genre(name=genre_name))
+
     db.add(book)
     await db.commit()
-    await db.refresh(book)
     return book
 
+
 async def get_all_books(limit: int, offset: int, db: AsyncSession) -> Sequence[Book]:
-    query = select(Book).offset(offset).limit(limit)
+    query = select(Book).offset(offset).limit(limit).options(
+        selectinload(Book.authors), selectinload(Book.genres)
+    )
     result = await db.execute(query)
     return result.scalars().all()
+
 
 async def get_books_by_title(title: str, db: AsyncSession) -> Sequence[Book]:
-    query = select(Book).where(Book.title.ilike(f"%{title}%"))
+    query = select(Book).where(Book.title.ilike(f"%{title}%")).options(
+        selectinload(Book.authors), selectinload(Book.genres)
+    )
     result = await db.execute(query)
     return result.scalars().all()
 
+
 async def get_book_by_id(book_id: int, db: AsyncSession) -> Book:
-    query = select(Book).where(Book.id == book_id)
+    query = select(Book).where(Book.id == book_id).options(
+        selectinload(Book.authors), selectinload(Book.genres)
+    )
     result = await db.execute(query)
-    if result.scalar_one_or_none() is None:
+    book = result.scalar_one_or_none()
+    if book is None:
         raise HTTPException(status_code=404, detail=NOT_FOUND)
-    return result.scalar()
+    return book
+
 
 async def delete_book(book_id: int, db: AsyncSession) -> None:
     book = await get_book_by_id(book_id, db)
     await db.delete(book)
     await db.commit()
+
 
 async def update_book(book_id: int, dto: UpdateBookSchema, db: AsyncSession) -> Book:
     book = await get_book_by_id(book_id, db)
@@ -53,4 +80,3 @@ async def update_book(book_id: int, dto: UpdateBookSchema, db: AsyncSession) -> 
     await db.commit()
     await db.refresh(book)
     return book
-

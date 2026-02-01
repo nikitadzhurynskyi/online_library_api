@@ -9,8 +9,14 @@ from src.db.database import Base
 user_books = Table(
     "user_books",
     Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
-    Column("book_id", Integer, ForeignKey("books.id"), primary_key=True))
+    Column("user_id",
+           Integer,
+           ForeignKey("users.id", ondelete="CASCADE"),
+           primary_key=True),
+    Column("book_id",
+           Integer,
+           ForeignKey("books.id", ondelete="CASCADE"),
+           primary_key=True))
 
 
 class UserRole(str, enum.Enum):
@@ -24,5 +30,5 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[String] = mapped_column(String, unique=True)
     password: Mapped[String] = mapped_column(String)
-    favorite_books: Mapped[list["Book"]] = relationship("Book", secondary=user_books)
+    favorite_books: Mapped[list["Book"]] = relationship("Book", secondary=user_books, passive_deletes=True)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)

@@ -18,7 +18,7 @@ class Book(Base):
     __tablename__ = "books"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    title: Mapped[String] = mapped_column(String, nullable=False, unique=True)
+    title: Mapped[String] = mapped_column(String, nullable=False, unique=False)
     description: Mapped[String] = mapped_column(String, nullable=False)
     authors: Mapped[list["Author"]] = relationship(secondary=book_authors, back_populates="books")
     genres: Mapped[list["Genre"]] = relationship(secondary=book_genres, back_populates="books")

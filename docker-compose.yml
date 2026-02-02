@@ -12,6 +12,17 @@ services:
       - db_data:/var/lib/postgresql/data
     ports:
       - ${DB_PORT}:5432
+  app:
+    build: .
+    container_name: library_backend
+    ports:
+      - "3000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
 
 volumes:
   db_data:

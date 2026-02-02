@@ -1,3 +1,6 @@
+import csv
+import io
+
 from fastapi import HTTPException
 from sqlalchemy import select, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -117,3 +120,25 @@ async def update_book(book_id: int, dto: UpdateBookSchema, db: AsyncSession) -> 
     await db.commit()
     await db.refresh(book)
     return book
+
+
+async def load_books_to_csv(db: AsyncSession):
+    query = select(Book).options(selectinload(Book.authors), selectinload(Book.genres))
+    result = await db.execute(query)
+    books = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=";", quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['ID', 'Title', 'Description', 'Authors', 'Genres'])
+    for book in books:
+        authors_str = ", ".join([f"{a.name} {getattr(a, 'surname', '')}".strip() for a in book.authors])
+        genres_str = ", ".join([g.name for g in book.genres])
+
+        writer.writerow([
+            book.id,
+            book.title,
+            book.description or "",
+            authors_str,
+            genres_str
+        ])
+    return output.getvalue()

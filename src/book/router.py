@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.auth.dependencies import get_current_admin, get_current_user
 from src.book.schema import BookResponse, FavoriteBooksSchema, CreateBookSchema, UpdateBookSchema
 from src.book.service import get_favorite_books_by_user_id, add_book_to_favorite, create_book, update_book, delete_book, \
-    get_book_by_id, get_all_books, get_books_by_title, remove_book_from_favorite
+    get_book_by_id, get_all_books, get_books_by_title, remove_book_from_favorite, load_books_to_csv
 from src.db.database import get_db
 from src.user.model import User
 
@@ -21,6 +21,19 @@ async def post_books(dto: CreateBookSchema,
 @router.get("/search", response_model=list[BookResponse])
 async def search_books(title: str, db: AsyncSession = Depends(get_db)) -> list[BookResponse]:
     return [BookResponse.model_validate(book) for book in await get_books_by_title(title, db)]
+
+
+@router.get("/csv", dependencies=[Depends(get_current_admin)])
+async def download_books_csv(db: AsyncSession = Depends(get_db)) -> Response:
+    csv_content = await load_books_to_csv(db)
+
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=books_export.csv"
+        }
+    )
 
 
 @router.post("/favorite", response_model=BookResponse)
@@ -60,7 +73,7 @@ async def put_book(book_id: int, dto: UpdateBookSchema, db: AsyncSession = Depen
     return BookResponse.model_validate(await update_book(book_id, dto, db))
 
 
-@router.delete("/{book_id}")
+@router.delete("/{book_id}", dependencies=[Depends(get_current_admin)])
 async def delete_book_by_id(book_id: int, db: AsyncSession = Depends(get_db)) -> Response:
     await delete_book(book_id, db)
     return Response(status_code=200)

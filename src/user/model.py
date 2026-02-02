@@ -1,9 +1,22 @@
 import enum
 
-from sqlalchemy import Integer, String, Enum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Integer, String, Enum, Table, Column, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from src.book.model import Book
 from src.db.database import Base
+
+user_books = Table(
+    "user_books",
+    Base.metadata,
+    Column("user_id",
+           Integer,
+           ForeignKey("users.id", ondelete="CASCADE"),
+           primary_key=True),
+    Column("book_id",
+           Integer,
+           ForeignKey("books.id", ondelete="CASCADE"),
+           primary_key=True))
 
 
 class UserRole(str, enum.Enum):
@@ -17,5 +30,5 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[String] = mapped_column(String, unique=True)
     password: Mapped[String] = mapped_column(String)
-
+    favorite_books: Mapped[list["Book"]] = relationship("Book", secondary=user_books, passive_deletes=True)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER)

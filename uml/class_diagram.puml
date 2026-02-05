@@ -1,0 +1,117 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide circle
+
+title Library API - Class Diagram (Functional/Module Style)
+
+package "Database Models (SQLAlchemy)" {
+    enum UserRole {
+        USER
+        ADMIN
+    }
+
+    class User {
+        +id: int
+        +email: str
+        +password: str
+        +role: UserRole
+        +favorite_books: List[Book]
+    }
+
+    class Book {
+        +id: int
+        +title: str
+        +description: str
+        +authors: List[Author]
+        +genres: List[Genre]
+    }
+
+    class Author {
+        +id: int
+        +name: str
+        +surname: str
+        +books: List[Book]
+    }
+
+    class Genre {
+        +id: int
+        +name: str
+        +books: List[Book]
+    }
+
+    User ..> UserRole : uses
+    User "*" -- "*" Book : Many-to-Many
+    Book "*" -- "*" Author : Many-to-Many
+    Book "*" -- "*" Genre : Many-to-Many
+}
+
+package "Pydantic Schemas (DTO)" {
+    class CreateBookSchema {
+        +title: str
+        +description: str
+        +authors: List[str]
+        +genres: List[str]
+    }
+
+    class UpdateBookSchema {
+        +title: str
+        +description: str
+        +authors: List[str]
+        +genres: List[str]
+    }
+
+    class BookResponse {
+        +id: int
+        +title: str
+        +description: str
+        +authors: List[str]
+        +genres: List[str]
+        --
+        +convert_authors_to_strings(v)
+        +convert_genres_to_strings(v)
+    }
+
+    class FavoriteBooksSchema {
+        +user_id: int
+        +book_ids: list[int]
+    }
+
+    class UserCreateSchema {
+        +email: str
+        +password: str
+    }
+
+    class UserResponseSchema {
+        +id: int
+        +email: str
+        +role: UserRole
+    }
+}
+
+package "Service Modules (Functions)" {
+    class "src.book.service" <<module>> {
+        +create_book(dto, db)
+        +get_all_books(limit, offset, db)
+        +get_book_by_id(book_id, db)
+        +update_book(book_id, dto, db)
+        +delete_book(book_id, db)
+        +get_csv_content(db)
+    }
+
+    class "src.auth.service" <<module>> {
+        +authenticate_user(email, password, db)
+        +create_user(user_in, db)
+    }
+}
+
+"src.book.service" ..> Book : creates/reads
+"src.book.service" ..> CreateBookSchema : accepts
+"src.book.service" ..> UpdateBookSchema : accepts
+"src.book.service" ..> BookResponse : returns (via Router)
+"src.book.service" ..> Author : manages
+"src.book.service" ..> Genre : manages
+
+"src.auth.service" ..> User : manages
+
+@enduml
